@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tic-Tac-Toe: Win or Draw</title>
+<style>
+:root{
+  --bg1:#eef0fb;--bg2:#fbeef3;--panel:#fff;--cell:#f2f3fa;--fg:#17142b;--mute:#6b6889;--line:#dedcef;
+  --x:#e8335f;--o:#0a93a6;--gold:#f5b82e;--btn:#241d4d;--btnfg:#fff;--shadow:0 16px 40px rgba(36,29,77,.16)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg1:#0c0b1a;--bg2:#1a0f22;--panel:#171430;--cell:#211d40;--fg:#f3f0ff;--mute:#9d98c2;--line:#2e2958;
+  --x:#ff6b8d;--o:#42d6e6;--btn:#ece8ff;--btnfg:#15112e;--shadow:0 16px 40px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{
+  --bg1:#0c0b1a;--bg2:#1a0f22;--panel:#171430;--cell:#211d40;--fg:#f3f0ff;--mute:#9d98c2;--line:#2e2958;
+  --x:#ff6b8d;--o:#42d6e6;--btn:#ece8ff;--btnfg:#15112e;--shadow:0 16px 40px rgba(0,0,0,.5)}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;color:var(--fg);font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;
+  background:radial-gradient(120% 70% at 10% 0%,var(--bg1),transparent 60%),radial-gradient(100% 60% at 100% 100%,var(--bg2),transparent 60%),var(--bg1);
+  display:flex;justify-content:center;padding:16px 14px 34px}
+.wrap{width:min(94vw,400px)}
+header{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px}
+h1{font-size:1.75rem;font-weight:800;letter-spacing:-.03em;margin:0}
+.icon{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:1.15rem;cursor:pointer;color:var(--fg)}
+.players{display:grid;grid-template-columns:1fr .8fr 1fr;gap:8px;margin-bottom:12px}
+.pl{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:10px 8px 8px;text-align:center;transition:border-color .2s,box-shadow .2s,transform .2s}
+.pl .nm{display:block;font-size:.78rem;color:var(--mute);margin-top:2px}
+.pl b{display:block;font-size:1.55rem;line-height:1.1}
+.pl .mk{position:absolute;top:-11px;left:50%;transform:translateX(-50%);min-width:24px;padding:1px 8px;border-radius:999px;font-weight:800;font-size:.8rem;color:#fff}
+.mk.X{background:var(--x)}.mk.O{background:var(--o)}
+.pl.on{transform:translateY(-3px)}
+.pl.you.on{border-color:var(--o);box-shadow:0 0 0 4px color-mix(in srgb,var(--o) 20%,transparent)}
+.pl.bot.on{border-color:var(--x);box-shadow:0 0 0 4px color-mix(in srgb,var(--x) 20%,transparent)}
+#status{display:flex;align-items:center;justify-content:center;gap:8px;min-height:2.2rem;margin-bottom:10px;font-weight:700;font-size:1.05rem;text-align:center}
+#dot{width:10px;height:10px;border-radius:50%;background:var(--mute);flex:none}
+#dot.think{animation:blink .7s infinite alternate}
+.boardwrap{position:relative;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
+#board{display:grid;grid-template-columns:repeat(3,1fr);gap:3%;aspect-ratio:1}
+.c{position:relative;border:0;border-radius:16px;background:var(--cell);cursor:pointer;padding:0;transition:transform .12s,background .2s}
+.c:not(:disabled):hover{transform:scale(1.05);background:color-mix(in srgb,var(--cell) 80%,var(--o))}
+.c:disabled{cursor:default}
+.c.last{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--gold) 70%,transparent)}
+.c.w{background:color-mix(in srgb,var(--gold) 28%,var(--cell))}
+.c:focus-visible,.act:focus-visible,.icon:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+.c svg{position:absolute;inset:20%;width:60%;height:60%;overflow:visible}
+.x line{stroke:var(--x);stroke-width:12;stroke-linecap:round;stroke-dasharray:80;stroke-dashoffset:80;animation:draw .26s ease-out forwards}
+.x line+line{animation-delay:.13s}
+.o circle{fill:none;stroke:var(--o);stroke-width:12;stroke-linecap:round;stroke-dasharray:252;stroke-dashoffset:252;animation:draw .38s ease-out forwards;transform:rotate(-90deg);transform-origin:50% 50%}
+#strike{position:absolute;inset:12px;width:calc(100% - 24px);height:calc(100% - 24px);pointer-events:none}
+#strike line{stroke-width:8;stroke-linecap:round;opacity:.92;animation:draw .5s ease-out forwards}
+.row{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-top:14px}
+.act{font:inherit;font-weight:700;font-size:.9rem;padding:13px 6px;border:0;border-radius:14px;background:var(--btn);color:var(--btnfg);cursor:pointer}
+.act.ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+.act.pulse{animation:ring 1.2s ease-out 2}
+.note{margin:14px 2px 0;font-size:.82rem;line-height:1.5;color:var(--mute)}
+.conf{position:fixed;top:-14px;width:8px;height:13px;border-radius:2px;pointer-events:none;animation:fall 1.7s linear forwards;z-index:9}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes blink{to{opacity:.25}}
+@keyframes fall{to{transform:translateY(108vh) rotate(600deg)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--btn) 45%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+@media (prefers-reduced-motion:reduce){.x line,.o circle,#strike line{animation-duration:.01s;animation-delay:0s}.conf,.act.pulse,#dot.think{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tic-Tac-Toe</h1>
+    <button class="icon" id="snd" aria-label="Toggle sound">🔊</button>
+  </header>
+
+  <div class="players">
+    <div class="pl you" id="pyou"><span class="mk" id="mkyou">O</span><b id="sy">0</b><span class="nm">You</span></div>
+    <div class="pl"><b id="sd">0</b><span class="nm">Draws</span></div>
+    <div class="pl bot" id="pbot"><span class="mk" id="mkbot">X</span><b id="sb">0</b><span class="nm">Bot</span></div>
+  </div>
+
+  <div id="status"><span id="dot"></span><span id="msg"></span></div>
+
+  <div class="boardwrap">
+    <div id="board" role="grid" aria-label="Tic-tac-toe board"></div>
+    <svg id="strike" viewBox="0 0 300 300" aria-hidden="true"></svg>
+  </div>
+
+  <div class="row">
+    <button class="act" id="next">Next round</button>
+    <button class="act ghost" id="who">Bot starts</button>
+    <button class="act ghost" id="reset">Reset</button>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+
+<script>
+const L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+let b, bot='X', me='O', over=false, busy=false, botStarts=true, last=-1, unbeaten=0, sndOn=true, ac;
+let tally={y:0,d:0,b:0};
+const memo=new Map();
+const $=id=>document.getElementById(id);
+
+/* ---------- engine: the bot never loses ---------- */
+function result(b){
+  for(const [x,y,z] of L) if(b[x]&&b[x]===b[y]&&b[x]===b[z]) return {w:b[x],line:[x,y,z]};
+  return b.includes(null)?null:{w:'D'};
+}
+function val(b,turn){
+  const r=result(b), n=b.filter(Boolean).length;
+  if(r) return r.w==='D'?0:(r.w===bot?10-n:-(10-n));
+  const key=b.map(v=>v||'-').join('')+turn+bot;
+  if(memo.has(key)) return memo.get(key);
+  const nx=turn==='X'?'O':'X'; let best=turn===bot?-99:99;
+  for(let i=0;i<9;i++) if(!b[i]){
+    b[i]=turn; const v=val(b,nx); b[i]=null;
+    best=turn===bot?Math.max(best,v):Math.min(best,v);
+  }
+  memo.set(key,best); return best;
+}
+function trapScore(b){
+  let tot=0, bad=0;
+  for(let i=0;i<9;i++) if(!b[i]){
+    tot++; b[i]=me; const v=val(b,bot); b[i]=null;
+    if(v>0) bad++;
+  }
+  return tot?bad/tot:0;
+}
+function pickBot(){
+  const sc=[]; let max=-99;
+  for(let i=0;i<9;i++) if(!b[i]){
+    b[i]=bot; const v=val(b,me); const t=(v===0&&!result(b))?trapScore(b):0; b[i]=null;
+    sc.push({i,v,t}); if(v>max) max=v;
+  }
+  const top=sc.filter(s=>s.v===max), mt=Math.max(...top.map(s=>s.t));
+  const pool=top.filter(s=>s.t===mt);
+  return pool[Math.floor(Math.random()*pool.length)].i;
+}
+
+/* ---------- sound, haptics, confetti ---------- */
+function beep(f,d=.09,t='sine'){
+  if(!sndOn) return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type=t; o.frequency.value=f; g.gain.value=.07; o.connect(g); g.connect(ac.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d); o.stop(ac.currentTime+d);
+  }catch(e){}
+}
+function buzz(ms){ try{ if(sndOn&&navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+function confetti(){
+  const cols=['#e8335f','#0a93a6','#f5b82e','#7a5cff','#2fbf71'];
+  for(let i=0;i<36;i++){
+    const s=document.createElement('span'); s.className='conf';
+    s.style.left=Math.random()*100+'vw'; s.style.background=cols[i%cols.length];
+    s.style.animationDelay=Math.random()*.5+'s'; document.body.appendChild(s);
+    setTimeout(()=>s.remove(),2400);
+  }
+}
+
+/* ---------- UI ---------- */
+const SVG={
+  X:'<svg viewBox="0 0 100 100" class="x" aria-hidden="true"><line x1="12" y1="12" x2="88" y2="88"/><line x1="88" y1="12" x2="12" y2="88"/></svg>',
+  O:'<svg viewBox="0 0 100 100" class="o" aria-hidden="true"><circle cx="50" cy="50" r="40"/></svg>'
+};
+function say(t,color,think){ $('msg').textContent=t; $('dot').style.background=color||'var(--mute)'; $('dot').classList.toggle('think',!!think); }
+function turnChips(who){ $('pyou').classList.toggle('on',who==='you'); $('pbot').classList.toggle('on',who==='bot'); }
+function cc(i){ return [47+103*(i%3), 47+103*Math.floor(i/3)]; }
+function strike(line,w){
+  const s=$('strike'); s.innerHTML='';
+  if(!line) return;
+  let [x1,y1]=cc(line[0]), [x2,y2]=cc(line[2]);
+  const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy), ux=dx/len, uy=dy/len;
+  x1-=ux*16; y1-=uy*16; x2+=ux*16; y2+=uy*16;
+  const L2=Math.hypot(x2-x1,y2-y1);
+  const el=document.createElementNS('http://www.w3.org/2000/svg','line');
+  el.setAttribute('x1',x1); el.setAttribute('y1',y1); el.setAttribute('x2',x2); el.setAttribute('y2',y2);
+  el.style.stroke=w==='X'?'var(--x)':'var(--o)';
+  el.style.strokeDasharray=L2; el.style.strokeDashoffset=L2;
+  s.appendChild(el);
+}
+function draw(line){
+  const el=$('board'); el.innerHTML='';
+  for(let i=0;i<9;i++){
+    const c=document.createElement('button');
+    c.className='c'+(i===last&&!over?' last':'')+(line&&line.includes(i)?' w':'');
+    c.setAttribute('aria-label','Cell '+(i+1)+(b[i]?', '+b[i]:', empty'));
+    c.disabled=over||busy||!!b[i];
+    if(b[i]) c.innerHTML=SVG[b[i]];
+    c.onclick=()=>tap(i); el.appendChild(c);
+  }
+  $('sy').textContent=tally.y; $('sd').textContent=tally.d; $('sb').textContent=tally.b;
+  $('mkyou').textContent=me; $('mkyou').className='mk '+me;
+  $('mkbot').textContent=bot; $('mkbot').className='mk '+bot;
+  $('note').textContent='The bot has gone '+unbeaten+(unbeaten===1?' round':' rounds')+' without losing. Perfect play always ends in a draw, so it wins only when you slip.';
+}
+function finish(){
+  const r=result(b); if(!r) return false;
+  over=true; turnChips(null);
+  if(r.w==='D'){ tally.d++; unbeaten++; say('Draw. Nobody slipped.','var(--mute)'); beep(300,.25,'triangle'); }
+  else if(r.w===bot){ tally.b++; unbeaten++; say('The bot wins.','var(--x)'); beep(220,.3,'sawtooth'); buzz([40,40,40]); }
+  else { tally.y++; unbeaten=0; say('You win!','var(--o)'); [523,659,784].forEach((f,i)=>setTimeout(()=>beep(f,.18),i*120)); confetti(); }
+  draw(r.line); strike(r.line,r.w);
+  $('next').classList.remove('pulse'); void $('next').offsetWidth; $('next').classList.add('pulse');
+  return true;
+}
+function botTurn(){
+  busy=true; turnChips('bot'); say('Bot is thinking\u2026','var(--x)',true); draw();
+  setTimeout(()=>{
+    const m=pickBot(); b[m]=bot; last=m; busy=false; beep(440); draw();
+    if(!finish()){ turnChips('you'); say('Your move','var(--o)'); }
+  },520);
+}
+function tap(i){
+  if(over||busy||b[i]) return;
+  b[i]=me; last=i; beep(660); buzz(15); draw();
+  if(finish()) return;
+  botTurn();
+}
+function start(){
+  bot=botStarts?'X':'O'; me=botStarts?'O':'X';
+  b=Array(9).fill(null); over=false; busy=false; last=-1; memo.clear();
+  $('who').textContent=botStarts?'Bot starts':'You start';
+  $('strike').innerHTML=''; $('next').classList.remove('pulse');
+  draw();
+  if(botStarts) botTurn(); else { turnChips('you'); say('Your move','var(--o)'); }
+}
+$('next').onclick=start;
+$('who').onclick=()=>{ botStarts=!botStarts; start(); };
+$('reset').onclick=()=>{ tally={y:0,d:0,b:0}; unbeaten=0; start(); };
+$('snd').onclick=()=>{ sndOn=!sndOn; $('snd').textContent=sndOn?'🔊':'🔇'; };
+start();
+</script>
+</body>
+</html>
